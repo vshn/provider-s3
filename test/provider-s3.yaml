@@ -1,0 +1,12 @@
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  labels:
+    name: provider-s3
+  name: provider-s3
+spec:
+  package: "" # patched
+  runtimeConfigRef:
+    name: providerconfig-s3
+  packagePullPolicy: Always

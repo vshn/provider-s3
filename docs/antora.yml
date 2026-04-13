@@ -1,0 +1,6 @@
+name: provider-s3
+title: Crossplane Provider S3
+version: master
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc

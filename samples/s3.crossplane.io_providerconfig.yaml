@@ -1,0 +1,12 @@
+apiVersion: s3.crossplane.io/v1
+kind: ProviderConfig
+metadata:
+  name: provider-config
+spec:
+  credentials:
+    apiSecretRef:
+      name: s3-secret
+      namespace: crossplane-system
+    source: InjectedIdentity
+  endpoint: https://zhw-a.s3.cloud.switch.ch
+status: {}

@@ -1,0 +1,18 @@
+site:
+  title: Crossplane Provider S3
+  start_page: provider-s3:index.adoc
+  url: https://vshn.github.io/provider-s3
+content:
+  sources:
+    - url: ../antora
+      branches:
+        - HEAD
+        - docs/v*
+      start_path: docs
+ui:
+  bundle:
+    url: https://github.com/vshn/antora-ui-default/releases/download/2.0.15/ui-bundle.zip
+    snapshot: true
+output:
+  dir: .public/
+  clean: true

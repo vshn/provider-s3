@@ -1,0 +1,83 @@
+package bucket
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	"github.com/minio/minio-go/v7"
+	s3v1 "github.com/vshn/provider-s3/apis/s3/v1"
+	controllerruntime "sigs.k8s.io/controller-runtime"
+)
+
+func (b *bucketClient) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	log := controllerruntime.LoggerFrom(ctx)
+	log.V(1).Info("creating resource")
+
+	bucket, ok := mg.(*s3v1.Bucket)
+	if !ok {
+		return managed.ExternalCreation{}, errNotBucket
+	}
+
+	err := b.createS3Bucket(ctx, bucket)
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
+
+	if bucket.Spec.ForProvider.Policy != nil {
+		err = b.mc.SetBucketPolicy(ctx, bucket.GetBucketName(), *bucket.Spec.ForProvider.Policy)
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+	}
+
+	b.setLock(bucket)
+
+	connectionDetails := managed.ConnectionDetails{
+		SecretID: []byte(b.SecretID),
+		KeyID:    []byte(b.KeyID),
+	}
+
+	return managed.ExternalCreation{ConnectionDetails: connectionDetails}, b.emitCreationEvent(bucket)
+}
+
+// createS3Bucket creates a new bucket and sets the name in the status.
+// If the bucket already exists, and we have permissions to access it, no error is returned and the name is set in the status.
+// If the bucket exists, but we don't own it, an error is returned.
+func (b *bucketClient) createS3Bucket(ctx context.Context, bucket *s3v1.Bucket) error {
+	bucketName := bucket.GetBucketName()
+	err := b.mc.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: bucket.Spec.ForProvider.Region})
+
+	if err != nil {
+		// Check to see if we already own this bucket (which happens if we run this twice)
+		exists, errBucketExists := b.mc.BucketExists(ctx, bucketName)
+		if errBucketExists == nil && exists {
+			return nil
+		}
+		// someone else might have created the bucket
+		return fmt.Errorf("the bucket already exists: %w", err)
+
+	}
+	return nil
+}
+
+// setLock sets an annotation that tells the Observe func that we have successfully created the bucket.
+// Without it, another resource that has the same bucket name might "adopt" the same bucket, causing 2 resources managing 1 bucket.
+func (b *bucketClient) setLock(bucket *s3v1.Bucket) {
+	if bucket.Annotations == nil {
+		bucket.Annotations = map[string]string{}
+	}
+	bucket.Annotations[lockAnnotation] = "claimed"
+
+}
+
+func (b *bucketClient) emitCreationEvent(bucket *s3v1.Bucket) error {
+	b.recorder.Event(bucket, event.Event{
+		Type:    event.TypeNormal,
+		Reason:  "Created",
+		Message: "Bucket successfully created",
+	})
+	return nil
+}
