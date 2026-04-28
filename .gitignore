@@ -1,0 +1,20 @@
+# Goreleaser
+/dist/
+/.github/release-notes.md
+
+# Build
+/provider-s3
+*.out
+/package/*.xpkg
+/kubeconfig
+__debug*
+
+# Docs
+/.cache/
+/.public/
+/node_modules/
+
+# work
+/.work/
+.vscode/
+.kind

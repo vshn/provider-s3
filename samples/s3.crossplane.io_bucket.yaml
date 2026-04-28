@@ -1,0 +1,14 @@
+apiVersion: s3.crossplane.io/v1
+kind: Bucket
+metadata:
+  name: bucket-local-dev
+spec:
+  forProvider:
+    region: us-east-1
+  providerConfigRef:
+    name: provider-config
+  writeConnectionSecretToRef:
+    name: bucket-credentials
+    namespace: crossplane-system
+status:
+  atProvider: {}
