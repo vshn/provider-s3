@@ -49,14 +49,16 @@ func (b *bucketClient) deleteAllObjects(ctx context.Context, bucket *s3v1.Bucket
 	defer cancel()
 
 	objectsCh := make(chan minio.ObjectInfo)
+	var listObjectErr error
 
 	// Send object names that are needed to be removed to objectsCh
 	go func() {
 		defer close(objectsCh)
 		for object := range b.mc.ListObjects(ctx, bucketName, minio.ListObjectsOptions{Recursive: true}) {
 			if object.Err != nil {
-				log.V(1).Info("warning: cannot list object", "key", object.Key, "error", object.Err)
-				continue
+				listObjectErr = object.Err
+
+				return
 			}
 
 			select {
@@ -79,6 +81,11 @@ func (b *bucketClient) deleteAllObjects(ctx context.Context, bucket *s3v1.Bucket
 			cancel()
 		}
 	}
+
+	if listObjectErr != nil {
+		return fmt.Errorf("cannot list objects for deletion: %w", listObjectErr)
+	}
+
 	return firstErr
 }
 
