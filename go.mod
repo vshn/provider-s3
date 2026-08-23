@@ -3,7 +3,7 @@ module github.com/vshn/provider-s3
 go 1.25.0
 
 require (
-	github.com/crossplane/crossplane-runtime/v2 v2.2.0
+	github.com/crossplane/crossplane-runtime/v2 v2.4.0
 	github.com/crossplane/crossplane-tools v0.0.0-20251017183449-dd4517244339
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
