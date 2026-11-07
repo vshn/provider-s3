@@ -24,7 +24,10 @@ $(crossplane_sentinel): export KUBECONFIG = $(KIND_KUBECONFIG)
 $(crossplane_sentinel): $(KIND_KUBECONFIG)
 	helm repo add --force-update crossplane https://charts.crossplane.io/stable
 	helm repo update
+	# Pinned to the v1 line, as in provider-minio, whose E2E passes on it. An
+	# unpinned install picks whatever the chart's latest major version is.
 	helm upgrade --install crossplane crossplane/crossplane \
+		--version "$(CROSSPLANE_VERSION)" \
 		--create-namespace \
 		--namespace crossplane-system \
 		--set "args[0]='--debug'" \
@@ -59,7 +62,7 @@ minio-setup: export KUBECONFIG = $(KIND_KUBECONFIG)
 minio-setup: kind-setup-ingress ## Install minio Crossplane implementation
 	kubectl wait pods -n ingress-nginx -l app.kubernetes.io/component=controller --for condition=Ready --timeout=120s
 	helm repo add minio https://charts.min.io/ --force-update
-	helm upgrade --install --create-namespace --namespace minio minio --version 5.0.7 minio/minio \
+	helm upgrade --install --create-namespace --namespace minio minio --version "$(MINIO_CHART_VERSION)" minio/minio \
 	--values test/minio/values.yaml
 	kubectl apply -f test/minio/gui-ingress.yaml
 	@echo -e "***\n*** Installed s3 in http://minio.127.0.0.1.nip.io:8088\n***"
