@@ -24,7 +24,10 @@ $(crossplane_sentinel): export KUBECONFIG = $(KIND_KUBECONFIG)
 $(crossplane_sentinel): $(KIND_KUBECONFIG)
 	helm repo add --force-update crossplane https://charts.crossplane.io/stable
 	helm repo update
+	# Pinned to the v1 line, as in provider-minio, whose E2E passes on it. An
+	# unpinned install picks whatever the chart's latest major version is.
 	helm upgrade --install crossplane crossplane/crossplane \
+		--version 1.20.1 \
 		--create-namespace \
 		--namespace crossplane-system \
 		--set "args[0]='--debug'" \
